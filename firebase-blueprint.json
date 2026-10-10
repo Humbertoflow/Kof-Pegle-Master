@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with cumulative KOF Peggle statistics and progression",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Auth UID of the user"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Public display name of the player"
+        },
+        "highScore": {
+          "type": "integer",
+          "description": "Highest score achieved across all stages"
+        },
+        "stagesUnlocked": {
+          "type": "integer",
+          "description": "Number of unlocked stages in Adventure Mode"
+        },
+        "totalPegsHit": {
+          "type": "integer",
+          "description": "Lifetime count of pegs hit by the player"
+        },
+        "totalFeverCount": {
+          "type": "integer",
+          "description": "Lifetime count of Extreme Fever modes triggered"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when profile was created via FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when profile was last updated via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["userId", "displayName", "highScore", "stagesUnlocked", "createdAt", "updatedAt"]
+    },
+    "ScoreRecord": {
+      "title": "ScoreRecord",
+      "description": "Individual stage completion score record for a player",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the score owner"
+        },
+        "recordId": {
+          "type": "string",
+          "description": "Unique identifier for this game session record"
+        },
+        "stageId": {
+          "type": "string",
+          "description": "Identifier of the stage played"
+        },
+        "stageTitle": {
+          "type": "string",
+          "description": "Title of the stage"
+        },
+        "score": {
+          "type": "integer",
+          "description": "Final score earned in the session"
+        },
+        "masterUsed": {
+          "type": "string",
+          "description": "Name of the KOF Peggle Master used (e.g. Kyo, Iori)"
+        },
+        "cleared": {
+          "type": "boolean",
+          "description": "Whether all orange pegs were cleared"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when record was logged via FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when record was updated via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["userId", "recordId", "stageId", "stageTitle", "score", "masterUsed", "cleared", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Root user profile document"
+    },
+    "/users/{userId}/records/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/ScoreRecord"
+      },
+      "description": "Subcollection of stage scores logged by the user"
+    }
+  }
+}

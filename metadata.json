@@ -1,0 +1,8 @@
+{
+  "name": "Kof Peggle",
+  "description": "Tactical physics puzzle game inspired by Peggle Deluxe featuring 208 campaign levels, Room database persistence, classic cannon mechanics, colorful pegs, and Extreme Fever Mode.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

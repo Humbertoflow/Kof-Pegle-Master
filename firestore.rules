@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 50 &&
+             data.highScore is int &&
+             data.highScore >= 0 &&
+             data.stagesUnlocked is int &&
+             data.stagesUnlocked >= 1 &&
+             data.stagesUnlocked <= 100 &&
+             (!('totalPegsHit' in data) || (data.totalPegsHit is int && data.totalPegsHit >= 0)) &&
+             (!('totalFeverCount' in data) || (data.totalFeverCount is int && data.totalFeverCount >= 0)) &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidScoreRecord(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.recordId is string &&
+             data.recordId.size() > 0 &&
+             data.recordId.size() <= 128 &&
+             data.stageId is string &&
+             data.stageId.size() > 0 &&
+             data.stageId.size() <= 64 &&
+             data.stageTitle is string &&
+             data.stageTitle.size() > 0 &&
+             data.stageTitle.size() <= 100 &&
+             data.score is int &&
+             data.score >= 0 &&
+             data.masterUsed is string &&
+             data.masterUsed.size() > 0 &&
+             data.masterUsed.size() <= 50 &&
+             data.cleared is bool &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'highScore', 'stagesUnlocked', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'highScore', 'stagesUnlocked', 'totalPegsHit', 'totalFeverCount', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'highScore', 'stagesUnlocked', 'totalPegsHit', 'totalFeverCount', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      match /records/{recordId} {
+        allow get, list: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         isValidId(recordId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().recordId == recordId &&
+                         incoming().keys().hasAll(['userId', 'recordId', 'stageId', 'stageTitle', 'score', 'masterUsed', 'cleared', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'recordId', 'stageId', 'stageTitle', 'score', 'masterUsed', 'cleared', 'createdAt', 'updatedAt']) &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidScoreRecord(incoming());
+
+        allow update: if isSignedIn() &&
+                         request.auth.uid == userId &&
+                         incoming().userId == existing().userId &&
+                         incoming().recordId == existing().recordId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidScoreRecord(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['stageTitle', 'score', 'masterUsed', 'cleared', 'updatedAt']);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+  }
+}
